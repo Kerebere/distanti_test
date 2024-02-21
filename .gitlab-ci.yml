@@ -1,0 +1,128 @@
+image: docker:18.09.7-dind
+services:
+  - docker:18.09.7-dind
+
+stages:
+  - build_prod
+  - deploy_prod
+  - build_dev
+  - deploy_dev
+  - traefik_prod
+  - traefik_dev
+build_prod_backend:
+  only:
+    - main
+      #  - merge_requests
+  variables:
+    DOCKER_HOST: tcp://localhost:2375/
+  services:
+    - docker:18.09.7-dind
+  stage: build_prod
+  #when: manual
+  script:
+    - cp $CI_PROD_BACKEND_ENV_FILE ./.env
+    - docker login git.distanti.ru:5050 -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - docker build -t git.distanti.ru:5050/dpo/backend/dpo-academy:latest .
+    - docker push git.distanti.ru:5050/dpo/backend/dpo-academy:latest
+
+deploy_prod_backend:
+  only:
+    #    - pushes
+    - main
+      #  - merge_requests
+  variables:
+    DOCKER_HOST: tcp://localhost:2375/
+  services:
+    - docker:18.09.7-dind
+  stage: deploy_prod
+  tags:
+    - pull_prod
+  # when: manual
+  script:
+    - docker login git.distanti.ru:5050 -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - mkdir -p /home/gitlab-runner/dpo-backend
+    - cd /home/gitlab-runner/dpo-backend
+    - docker compose down || true
+    - docker rmi git.distanti.ru:5050/dpo/backend/dpo-academy:latest || true
+    - rm -f docker-compose.yml || true
+    - cp $BACKEND_PROD_DOCKER_FILE ./docker-compose.yml || true
+    - docker compose up -d || true
+    - docker compose exec app yarn migrate:prod || true
+
+build_dev_backend:
+  only:
+    - dev
+  variables:
+    DOCKER_HOST: tcp://localhost:2375/
+  services:
+    - docker:18.09.7-dind
+  stage: build_dev
+  #when: manual
+  script:
+    - cp $CI_DEV_BACKEND_ENV_FILE ./.env
+    - docker login git.distanti.ru:5050 -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - docker build -t git.distanti.ru:5050/dpo/backend/dpo-academy:dev .
+    - docker push git.distanti.ru:5050/dpo/backend/dpo-academy:dev
+
+deploy_dev_backend:
+  only:
+    - dev
+  services:
+    - docker:18.09.7-dind
+  stage: deploy_dev
+  variables:
+    DOCKER_HOST: tcp://localhost:2375/
+  tags:
+    - pull_dev
+  # when: manual
+  script:
+    - docker login git.distanti.ru:5050 -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - mkdir -p /home/gitlab-runner/dpo-backend
+    - cd /home/gitlab-runner/dpo-backend
+    - docker compose down || true
+    - docker rmi git.distanti.ru:5050/dpo/backend/dpo-academy:dev || true
+    - rm -f docker-compose.yml || true
+    - cp $BACKEND_DEV_DOCKER_FILE ./docker-compose.yml || true
+    - docker compose up -d || true
+    - docker compose exec app yarn migrate:dev || true
+
+up_dev_traefik:
+  only:
+    - dev
+  services:
+    - docker:18.09.7-dind
+  stage: traefik_dev
+  variables:
+    DOCKER_HOST: tcp://localhost:2375/
+  tags:
+    - pull_dev
+  when: manual
+  script:
+    - docker login git.distanti.ru:5050 -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - mkdir -p /home/gitlab-runner/traefik/letsencrypt
+    - cd /home/gitlab-runner/traefik
+    - docker compose down || true
+    - docker rmi traefik:v2.10 || true
+    - rm -f docker-compose.yml || true
+    - cp $TRAEFIK_DOCKER_FILE ./docker-compose.yml || true
+    - docker compose up -d || true
+up_prod_traefik:
+  only:
+    - main
+  services:
+    - docker:18.09.7-dind
+  stage: traefik_prod
+  variables:
+    DOCKER_HOST: tcp://localhost:2375/
+  tags:
+    - pull_prod
+  when: manual
+  script:
+    - docker login git.distanti.ru:5050 -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+    - mkdir -p /home/gitlab-runner/traefik/letsencrypt
+    - cd /home/gitlab-runner/traefik
+    - docker compose down || true
+    - docker rmi traefik:v2.10 || true
+    - rm -f docker-compose.yml || true
+    - cp $TRAEFIK_DOCKER_FILE ./docker-compose.yml || true
+    - docker compose up -d || true

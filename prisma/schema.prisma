@@ -1,0 +1,81 @@
+//🧩Don't Edit this file.✨Generated in Wed Feb 21 2024 17:06:11 GMT+0300 (Москва, стандартное время)✨
+model ActivationToken {
+  id      String   @id @default(uuid())
+  userId  String
+  token   String   @unique
+  expires DateTime
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@map("activation_tokens")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Feedback {
+  id       Int    @id @default(autoincrement())
+  name     String
+  lastName String
+  phone    String @unique
+
+  @@map("feedbacks")
+}
+
+model RefreshToken {
+  id      Int      @id @default(autoincrement())
+  userId  String
+  token   String   @unique
+  expires DateTime
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+model User {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  phone           String            @unique
+  firstName       String
+  lastName        String
+  middleName      String?
+  password        String
+  avatarUrl       String?
+  isBlocked       Boolean           @default(false)
+  isActive        Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  RefreshToken    RefreshToken[]
+  ActivationToken ActivationToken[]
+
+  @@map("users")
+}
+
+model PasswordResetEvent {
+  id                  String            @id @default(uuid())
+  verificationEventId String            @unique
+  email               String
+  verificationEvent   VerificationEvent @relation(fields: [verificationEventId], references: [id])
+
+  @@map("password_reset_events")
+}
+
+model VerificationEvent {
+  id        String   @id @default(uuid())
+  accessKey String   @unique
+  eventType String
+  expiresAt DateTime
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Связь с таблицей PasswordResetEvent
+  passwordResetEvent PasswordResetEvent?
+
+  @@map("verification_events")
+}

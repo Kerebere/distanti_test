@@ -1,0 +1,14 @@
+model VerificationEvent {
+  id        String   @id @default(uuid())
+  accessKey String   @unique
+  eventType String
+  expiresAt DateTime
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Связь с таблицей PasswordResetEvent
+  passwordResetEvent PasswordResetEvent?
+
+  @@map("verification_events")
+}
