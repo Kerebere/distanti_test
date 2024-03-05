@@ -8,6 +8,9 @@ import { validationSchema } from './core/environment';
 import { FeedbackController } from './domains/feedback/feedback.controller';
 import { FeedbackModule } from './domains/feedback/feedback.module';
 import { FeedbackService } from './domains/feedback/feedback.service';
+import { GroupModule } from './domains/group/group.module';
+import { SubgroupModule } from './domains/subgroup/subgroup.module';
+import { EmployeeModule } from './domains/employee/employee.module';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { FeedbackService } from './domains/feedback/feedback.service';
     S3Module,
     MailModule,
     FeedbackModule,
+    GroupModule,
+    SubgroupModule,
+    EmployeeModule,
   ],
 
   providers: [FeedbackService],

@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Post,
-  HttpException,
-  HttpStatus,
-  HttpCode,
-} from '@nestjs/common';
+import { Body, Controller, Post, HttpStatus, HttpCode } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -31,11 +24,7 @@ export class FeedbackController {
   async create(
     @Body() createFeedbackDto: CreateFeedbackDto,
   ): Promise<{ message: string }> {
-    try {
-      await this.feedbackService.create(createFeedbackDto);
-      return { message: 'Заявка на обратную связь успешно создана.' };
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
-    }
+    await this.feedbackService.create(createFeedbackDto);
+    return { message: 'Заявка на обратную связь успешно создана.' };
   }
 }

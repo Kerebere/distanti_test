@@ -5,10 +5,10 @@ import { FieldConflictException } from '../../common/exceptions/field-conflict.e
 
 @Injectable()
 export class FeedbackService {
-  constructor(private prisma: DatabaseService) {}
+  constructor(private database: DatabaseService) {}
 
   async create(createFeedbackDto: CreateFeedbackDto) {
-    const existingPhone = await this.prisma.feedback.findUnique({
+    const existingPhone = await this.database.feedback.findUnique({
       where: { phone: createFeedbackDto.phone },
     });
 
@@ -18,7 +18,7 @@ export class FeedbackService {
         'Этот номер телефона уже существует в базе данных',
       );
     }
-    return this.prisma.feedback.create({
+    return this.database.feedback.create({
       data: createFeedbackDto,
     });
   }

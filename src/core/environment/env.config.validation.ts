@@ -8,9 +8,10 @@ export const validationSchema: Joi.ObjectSchema<EnvConfig> = Joi.object({
 
   PORT: Joi.number().required(),
 
-  JWT_ACCESS_SECRET: Joi.string().required(),
-  JWT_REFRESH_SECRET: Joi.string().required(),
-  JWT_EXPIRATION_TIME: Joi.string().required(),
+  USER_JWT_ACCESS_SECRET: Joi.string().required(),
+  USER_JWT_REFRESH_SECRET: Joi.string().required(),
+  EMPLOYEE_JWT_ACCESS_SECRET: Joi.string().required(),
+  EMPLOYEE_JWT_REFRESH_SECRET: Joi.string().required(),
 
   ADMIN_LOGIN: Joi.string().required(),
   ADMIN_PASSWORD: Joi.string().required(),
@@ -29,9 +30,10 @@ export const validationSchema: Joi.ObjectSchema<EnvConfig> = Joi.object({
   MINIO_USE_SSL: Joi.boolean().required(),
 
   MAIL_TRANSPORT: Joi.string().required(),
-  MAIL_FROM_NAME: Joi.string().required(),
-  USE_SSL: Joi.boolean().required(),
-  USE_STARTTLS: Joi.boolean().required(),
-  USE_OAUTH: Joi.boolean().required(),
+  MAIL_HOST: Joi.string().required(),
+  MAIL_PORT: Joi.number().required(),
+  MAIL_USER: Joi.string().required(),
+  MAIL_PASSWORD: Joi.string().required(),
+  MAIL_FROM: Joi.string().required(),
   CORS_ALLOWED_ORIGINS: Joi.string().required(),
 });

@@ -1,12 +1,187 @@
-//🧩Don't Edit this file.✨Generated in Wed Feb 21 2024 17:06:11 GMT+0300 (Москва, стандартное время)✨
-model ActivationToken {
+//🧩Don't Edit this file.✨Generated in Tue Mar 05 2024 15:38:29 GMT+0500 (Екатеринбург, стандартное время)✨
+model EmployeeActivationToken {
   id      String   @id @default(uuid())
-  userId  String
   token   String   @unique
   expires DateTime
-  user    User     @relation(fields: [userId], references: [id])
 
-  @@map("activation_tokens")
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("employee_activation_tokens")
+}
+
+model UserActivationToken {
+  id      String   @id @default(uuid())
+  token   String   @unique
+  expires DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("user_activation_tokens")
+}
+
+model Employee {
+  id         String   @id @default(uuid())
+  lastName   String
+  firstName  String
+  middleName String?
+  email      String   @unique
+  role       String   @default("Admin")
+  password   String
+  isBlocked  Boolean  @default(false)
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  RefreshToken    EmployeeRefreshToken[]
+  ActivationToken EmployeeActivationToken[]
+
+  @@map("employees")
+}
+
+model Feedback {
+  id       String @id @default(uuid())
+  fullName String
+  phone    String @unique
+
+  @@map("feedbacks")
+}
+
+model Group {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @unique
+  iconUrl   String?
+  subgroups Subgroup[]
+
+  @@map("groups")
+}
+
+model PersonalDataTemplate {
+  id          String                   @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  bioId       String                   @db.Uuid
+  fileId      String                   @db.Uuid
+  bio         PersonalDataTemplateBio  @relation(fields: [bioId], references: [id])
+  file        PersonalDataTemplateFile @relation(fields: [fileId], references: [id])
+
+  @@map("personal_data_templates")
+}
+
+model PersonalDataTemplateBio {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  isFIO                Boolean // ФИО
+  isSNILS              Boolean // СНИЛС
+  isEmail              Boolean // Электронная почта
+  isOrganizationINN    Boolean // ИНН организации
+  isOrganizationName   Boolean // Наименование организации
+  isPosition           Boolean // Должность
+  PersonalDataTemplate PersonalDataTemplate[]
+
+  @@map("personal_data_template_bio")
+}
+
+model PersonalDataTemplateFile {
+  id                             String                 @id @default(uuid()) @db.Uuid
+  isHigherEducation              Boolean // Высшее образование
+  isHigherProflEducation         Boolean // Высшее профессионалньое образование
+  isSecondaryEducation           Boolean // Среднее образование
+  isSecondaryVocationalEducation Boolean // Среднее профессиональное образование
+  isInternship                   Boolean // Интернатура
+  isResidency                    Boolean // Ординатура
+  PersonalDataTemplate           PersonalDataTemplate[]
+
+  @@map("personal_data_template_files")
+}
+
+model EmployeeRefreshToken {
+  id      String   @id @default(uuid())
+  token   String   @unique
+  expires DateTime
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("employee_refresh_tokens")
+}
+
+model UserRefreshToken {
+  id      String   @id @default(uuid())
+  token   String   @unique
+  expires DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("user_refresh_tokens")
+}
+
+model SubgroupBonusPercentage {
+  id              String @id @default(uuid()) @db.Uuid
+  count           Int
+  bonusPercentage Float
+
+  subgroup   Subgroup @relation(fields: [subgroupId], references: [id], onDelete: Cascade)
+  subgroupId String
+
+  @@map("subgroup_bonus_percentages")
+}
+
+model SubgroupPrice {
+  id    String @id @default(uuid()) @db.Uuid
+  count Int
+  price Float
+
+  subgroup   Subgroup @relation(fields: [subgroupId], references: [id], onDelete: Cascade)
+  subgroupId String
+
+  @@map("subgroup_prices")
+}
+
+model Subgroup {
+  id               String                    @id @default(uuid())
+  name             String
+  parent           Group                     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parentId         String                    @db.Uuid
+  title            String
+  description      String
+  exportToFISFRDO  Boolean
+  exportToEGIST    Boolean
+  prices           SubgroupPrice[]
+  bonusPercentages SubgroupBonusPercentage[]
+
+  @@map("subgroups")
+}
+
+model TemplateDocument {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("template_documents")
+}
+
+model User {
+  id              String                @id @default(uuid())
+  email           String                @unique
+  phone           String                @unique
+  firstName       String
+  lastName        String
+  middleName      String?
+  password        String
+  avatarUrl       String?
+  isBlocked       Boolean               @default(false)
+  isActive        Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  RefreshToken    UserRefreshToken[]
+  ActivationToken UserActivationToken[]
+
+  @@map("users")
 }
 
 generator client {
@@ -18,44 +193,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Feedback {
-  id       Int    @id @default(autoincrement())
-  name     String
-  lastName String
-  phone    String @unique
-
-  @@map("feedbacks")
-}
-
-model RefreshToken {
-  id      Int      @id @default(autoincrement())
-  userId  String
-  token   String   @unique
-  expires DateTime
-  user    User     @relation(fields: [userId], references: [id])
-
-  @@map("refresh_tokens")
-}
-
-model User {
-  id              String            @id @default(uuid())
-  email           String            @unique
-  phone           String            @unique
-  firstName       String
-  lastName        String
-  middleName      String?
-  password        String
-  avatarUrl       String?
-  isBlocked       Boolean           @default(false)
-  isActive        Boolean           @default(false)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  RefreshToken    RefreshToken[]
-  ActivationToken ActivationToken[]
-
-  @@map("users")
-}
-
 model PasswordResetEvent {
   id                  String            @id @default(uuid())
   verificationEventId String            @unique
@@ -63,6 +200,15 @@ model PasswordResetEvent {
   verificationEvent   VerificationEvent @relation(fields: [verificationEventId], references: [id])
 
   @@map("password_reset_events")
+}
+
+model UserActivateEvent {
+  id                  String            @id @default(uuid())
+  verificationEventId String            @unique
+  email               String
+  verificationEvent   VerificationEvent @relation(fields: [verificationEventId], references: [id])
+
+  @@map("user_activate_events")
 }
 
 model VerificationEvent {
@@ -76,6 +222,9 @@ model VerificationEvent {
 
   // Связь с таблицей PasswordResetEvent
   passwordResetEvent PasswordResetEvent?
+
+  // Связь с таблицей UserActivateEvent
+  userActivateEvent UserActivateEvent?
 
   @@map("verification_events")
 }

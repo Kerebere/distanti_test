@@ -3,21 +3,26 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/domains/users/users.module';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { AuthRepository } from './auth.repository';
+import { EmployeeModule } from 'src/domains/employee/employee.module';
 
 import { DatabaseModule } from 'src/core/database';
 import { MailModule } from 'src/common/mail/mail.module';
 import { VerificationEventModule } from '../domains/verification-event/verification-event.module';
+import { EmployeeStrategy } from './strategies/employee.strategy';
+import { UserStrategy } from './strategies/user.strategy';
+
+import { AuthUserController } from './user/auth-user.controller';
+import { AuthUserService } from './user/auth-user.service';
+import { AuthEmployeeController } from './employee/auth-employee.controller';
+import { AuthEmployeeService } from './employee/auth-employee.service';
 
 @Module({
   imports: [
     DatabaseModule,
     UsersModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    EmployeeModule,
+    PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -32,8 +37,13 @@ import { VerificationEventModule } from '../domains/verification-event/verificat
     ConfigModule,
     VerificationEventModule,
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AuthRepository],
-  exports: [AuthService, JwtStrategy, PassportModule, JwtModule],
+  controllers: [AuthUserController, AuthEmployeeController],
+  providers: [
+    EmployeeStrategy,
+    UserStrategy,
+    AuthUserService,
+    AuthEmployeeService,
+  ],
+  exports: [PassportModule, JwtModule],
 })
 export class AuthModule {}

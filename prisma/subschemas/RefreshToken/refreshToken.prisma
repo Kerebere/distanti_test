@@ -1,9 +1,0 @@
-model RefreshToken {
-  id      Int      @id @default(autoincrement())
-  userId  String
-  token   String   @unique
-  expires DateTime
-  user    User     @relation(fields: [userId], references: [id])
-
-  @@map("refresh_tokens")
-}

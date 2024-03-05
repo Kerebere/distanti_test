@@ -10,5 +10,8 @@ model VerificationEvent {
   // Связь с таблицей PasswordResetEvent
   passwordResetEvent PasswordResetEvent?
 
+  // Связь с таблицей UserActivateEvent
+  userActivateEvent UserActivateEvent?
+
   @@map("verification_events")
 }

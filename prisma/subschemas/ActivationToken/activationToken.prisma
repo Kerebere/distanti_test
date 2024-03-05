@@ -1,9 +1,0 @@
-model ActivationToken {
-  id      String   @id @default(uuid())
-  userId  String
-  token   String   @unique
-  expires DateTime
-  user    User     @relation(fields: [userId], references: [id])
-
-  @@map("activation_tokens")
-}

@@ -47,7 +47,7 @@ deploy_prod_backend:
     - rm -f docker-compose.yml || true
     - cp $BACKEND_PROD_DOCKER_FILE ./docker-compose.yml || true
     - docker compose up -d || true
-    - docker compose exec app yarn migrate:prod || true
+    - docker compose exec app yarn migrate:prod
 
 build_dev_backend:
   only:
@@ -84,7 +84,7 @@ deploy_dev_backend:
     - rm -f docker-compose.yml || true
     - cp $BACKEND_DEV_DOCKER_FILE ./docker-compose.yml || true
     - docker compose up -d || true
-    - docker compose exec app yarn migrate:dev || true
+    - docker compose exec app yarn migrate:prod || true
 
 up_dev_traefik:
   only:

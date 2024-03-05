@@ -3,27 +3,28 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  Param,
+  Get,
   Post,
   Res,
+  Param,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { Response } from 'express';
-import { Cookies } from 'src/common/decorators';
-import { CreateUserDto } from 'src/domains/users/dto/create-user.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ConfigService } from '@nestjs/config';
-import { FieldConflictException } from '../common/exceptions/field-conflict.exception';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ApiTags, ApiResponse, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { CreateEmployeeDto } from 'src/domains/employee/dto/create-employee.dto';
+import { AuthCredentialsDto } from '../dto/auth-credentials.dto';
+import { FieldConflictException } from '../../common/exceptions/field-conflict.exception';
+import { Cookies } from '../../common/decorators';
+import { AuthEmployeeService } from './auth-employee.service';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 
-@ApiTags('Аутентификация')
-@Controller('auth')
-export class AuthController {
+@ApiTags('Аутентификация сотрудника')
+@Controller('auth/employee')
+export class AuthEmployeeController {
   constructor(
-    private readonly authService: AuthService,
+    private readonly authEmployeeService: AuthEmployeeService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -35,14 +36,14 @@ export class AuthController {
     const cookieOptions = {
       httpOnly: true,
       secure: this.configService.get<string>('NODE_ENV') === 'production',
-      path: '/auth/refresh',
+      path: '/auth/employee/refresh',
       maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 30 days or 7 days
     };
 
-    response.cookie('refreshToken', refreshToken, cookieOptions);
+    response.cookie('employeeRefreshToken', refreshToken, cookieOptions);
   }
 
-  @ApiOperation({ summary: 'Аутентификация пользователя' })
+  @ApiOperation({ summary: 'Аутентификация сотрудника' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Успешная аутентификация',
@@ -70,7 +71,7 @@ export class AuthController {
   })
   @ApiBody({
     type: AuthCredentialsDto,
-    description: 'Данные аутентификации пользователя',
+    description: 'Данные аутентификации сотрудника',
   })
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -78,18 +79,17 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Body() credentials: AuthCredentialsDto,
   ) {
-    const { access_token, refresh_token } = await this.authService.login(
-      credentials,
-    );
+    const { access_token, refresh_token } =
+      await this.authEmployeeService.login(credentials);
 
     this.setRefreshTokenCookie(response, refresh_token, credentials.rememberMe);
 
     return { access_token };
   }
 
-  @ApiOperation({ summary: 'Обновление токенов' })
+  @ApiOperation({ summary: 'Обновление токенов для сотрудника' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Access токен успешно обновлен',
     schema: {
       type: 'object',
@@ -102,7 +102,7 @@ export class AuthController {
     },
   })
   @ApiResponse({
-    status: 401,
+    status: HttpStatus.UNAUTHORIZED,
     description: 'Неверный или истекший refresh токен',
   })
   @ApiResponse({
@@ -111,48 +111,61 @@ export class AuthController {
   })
   @Post('refresh')
   async refresh(
-    @Cookies('refreshToken') refreshToken: string,
+    @Cookies('employeeRefreshToken') refreshToken: string,
     @Res({ passthrough: true }) response: Response,
   ) {
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh токен отсутствует');
     }
 
-    const { access_token, refresh_token } = await this.authService.refreshToken(
-      refreshToken,
-    );
+    const { access_token, refresh_token } =
+      await this.authEmployeeService.refreshToken(refreshToken);
 
     this.setRefreshTokenCookie(response, refresh_token, false);
 
     return { access_token };
   }
 
-  @ApiOperation({ summary: 'Регистрация нового пользователя' })
+  @ApiOperation({ summary: 'Регистрация нового сотрудника' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Пользователь успешно зарегистрирован',
+    description: 'Сотрудник успешно зарегистрирован',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description:
-      'Пользователь с таким email или номером телефона уже существует',
+    description: 'Сотрудник с таким email уже существует',
     type: FieldConflictException,
   })
   @HttpCode(HttpStatus.CREATED)
   @Post('register')
   async register(
     @Res({ passthrough: true }) response: Response,
-    @Body() createUserDto: CreateUserDto,
+    @Body() createEmployeeDto: CreateEmployeeDto,
   ) {
-    const { access_token, refresh_token } = await this.authService.registerUser(
-      createUserDto,
-    );
+    const { access_token, refresh_token } =
+      await this.authEmployeeService.register(createEmployeeDto);
 
     this.setRefreshTokenCookie(response, refresh_token, true);
 
     return { access_token };
   }
 
+  @Get('/logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Выход сотрудника из системы' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Сотрудник вышел из системы',
+  })
+  async logout(
+    @Cookies('refreshToken') refreshToken: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.clearCookie('employeeRefreshToken');
+    await this.authEmployeeService.logout(refreshToken);
+  }
+
+  @Post('forgot-password')
   @ApiOperation({ summary: 'Запрос на сброс пароля.' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -160,27 +173,26 @@ export class AuthController {
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Пользователь не найден',
+    description: 'Сотрудник не найден',
   })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,
-    description: 'Пользователь не активирован',
+    description: 'Сотрудник не активирован',
   })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,
-    description: 'Пользователь заблокирован',
+    description: 'Сотрудник заблокирован',
   })
   @HttpCode(HttpStatus.OK)
-  @Post('forgot-password')
   async resetPasswordRequest(@Body() { email }: ForgotPasswordDto) {
-    await this.authService.resetPasswordRequest(email);
+    await this.authEmployeeService.resetPasswordRequest(email);
 
     return {
       message: 'Инструкции по сбросу пароля отправлены на указанный email.',
     };
   }
 
-  @ApiOperation({ summary: 'Сбросить пароль пользователя.' })
+  @ApiOperation({ summary: 'Сбросить пароль сотрудника.' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Пароль успешно сброшен.',
@@ -196,7 +208,21 @@ export class AuthController {
     @Param('token') token: string,
     @Body() resetPasswordDto: ResetPasswordDto,
   ) {
-    await this.authService.resetPassword(token, resetPasswordDto.password);
+    await this.authEmployeeService.resetPassword(
+      token,
+      resetPasswordDto.password,
+    );
     return { message: 'Пароль успешно сброшен.' };
+  }
+
+  @Post('/activate-employee/:token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Активировать сотрудника' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Сотрудник активирован',
+  })
+  async activateEmployee(@Param('token') token: string) {
+    await this.authEmployeeService.activateEmployee(token);
   }
 }

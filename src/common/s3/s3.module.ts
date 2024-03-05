@@ -19,6 +19,7 @@ import { S3Service } from './s3.service';
     }),
   ],
   providers: [S3Service],
+  exports: [S3Service],
   controllers: [],
 })
 export class S3Module {}
